@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="ISO-8859-1">
+    <title>Home Page of Travel Gig</title>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- <link rel="stylesheet" type="text/css" href="home.css"> -->
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Travel Gig</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <!-- Link to the home page -->
+            <li class="nav-item active">
+                <a class="nav-link" href="/index.html">Home</a>
+            </li>
+            <!-- Link to the cart page -->
+            <li class="nav-item">
+                <a class="nav-link" href="/cart.html">Cart</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/chat.html">Chatbot</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/login.html">Login</a>
+            </li>
+            <li class="nav-item d-none" id="logoutNavItem">
+                <a class="nav-link" href="#" id="logoutBtn">Logout</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container" style="margin-left:100px">
+    <h1>Welcome to Travel Gig</h1>
+    <h2>Search your desired hotel</h2>
+</div>
+
+<div class="container border rounded" style="margin:auto;padding:50px;margin-top:50px;margin-bottom:50px">
+    <h3>Narrow your search results</h3>
+    <div class="form-row">
+        <div class="col-3">
+            Hotel/City/State/Address <input class="form-control" type="text" id="searchLocation" name="searchLocation"/>
+        </div>
+        <div class="col-2">
+            No. Rooms: <input class="form-control" type="number" id="noRooms" name="noRooms"/>
+        </div>
+        <div class="col-2">
+            No. Guests: <input class="form-control" type="number" id="noGuests" name="noGuests"/>
+        </div>
+        <div class="col">
+            Check-In Date: <input type="date" id="checkInDate" name="checkInDate"/>
+        </div>
+        <div class="col">
+            Check-Out Date: <input type="date" id="checkOutDate" name="checkOutDate"/>
+        </div>
+        <input class="btn-sm btn-primary" type="button" id="searchBtn" value="SEARCH"/>
+    </div>
+</div>
+
+<!-- Rooms Modal (Place this somewhere in your HTML) -->
+<div class="modal" id="roomsModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Available Rooms</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body" id="roomsModalBody">
+                <!-- Room details will be inserted here via AJAX -->
+            </div>
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-2 border rounded" style="margin-left:50px;padding:25px">
+        <br>
+        <!-- Star Rating checkboxes -->
+        Star Rating:<br>
+        <div class="form-check-inline">
+            <label class="form-check-label">
+                <input type="checkbox" class="star_rating form-check-input" id="1_star_rating" value=1>1
+            </label>
+        </div>
+        <div class="form-check-inline">
+            <label class="form-check-label">
+                <input type="checkbox" class="star_rating form-check-input" id="2_star_rating" value=2>2
+            </label>
+        </div>
+        <div class="form-check-inline">
+            <label class="form-check-label">
+                <input type="checkbox" class="star_rating form-check-input" id="3_star_rating" value=3>3
+            </label>
+        </div>
+        <div class="form-check-inline">
+            <label class="form-check-label">
+                <input type="checkbox" class="star_rating form-check-input" id="4_star_rating" value=4>4
+            </label>
+        </div>
+        <div class="form-check-inline">
+            <label class="form-check-label">
+                <input type="checkbox" class="star_rating form-check-input" id="5_star_rating" value=5>5
+            </label>
+        </div>
+        <br><br>
+        Range:
+        <div class="slidecontainer">
+            <input type="range" min="1" max="1000" value="1000" class="slider" id="priceRange">
+            <p>Price: $<span id="priceValue"></span></p>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" class="hotel_amenity form-check-input" id="amenity_parking" value="PARKING"/>
+            <label class="form-check-label" for="amenity_parking">Parking</label><br>
+            <input type="checkbox" class="hotel_amenity form-check-input" id="amenity_checkin_checkout" value="CHECK-IN & CHECK-OUT TIMES"/>
+            <label class="form-check-label" for="amenity_checkin_checkout">Check-In & Check-Out Times</label><br>
+            <input type="checkbox" class="hotel_amenity form-check-input" id="amenity_breakfast" value="BREAKFAST"/>
+            <label class="form-check-label" for="amenity_breakfast">Breakfast</label><br>
+            <input type="checkbox" class="hotel_amenity form-check-input" id="amenity_bar_lounge" value="BAR OR LOUNGE"/>
+            <label class="form-check-label" for="amenity_bar_lounge">Bar / Lounge</label><br>
+            <input type="checkbox" class="hotel_amenity form-check-input" id="amenity_fitness_center" value="FITNESS CENTER"/>
+            <label class="form-check-label" for="amenity_fitness_center">Fitness Center</label><br>
+        </div>
+        <input style="margin-top:25px" class="btn btn-primary" type="button" id="filterBtn" value="FILTER"/>
+    </div>
+
+    <div class="col-7 border rounded" style="margin-left:50px;">
+        <div style='text-align:center;font-size:20px;font-family:"Trebuchet MS", Helvetica, sans-serif'>
+            List of Hotels:
+        </div>
+        <div id="listHotel"></div>
+    </div>
+</div>
+
+<div class="modal" id="myModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Search Hotel Rooms</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <div class="col">
+                    <input class="form-control" type="hidden" id="modal_hotelId"/>
+                    Hotel Name: <input readonly="true" class="form-control" type="text" id="modal_hotelName"/>
+                    No. Guests: <input class="form-control" type="number" id="modal_noGuests"/>
+                    Check-In Date: <input class="form-control" type="date" id="modal_checkInDate"/>
+                    Check-Out Date: <input class="form-control" type="date" id="modal_checkOutDate"/>
+                    Room Type:
+                    <select class="form-control" id="select_roomTypes"></select>
+                    No. Rooms: <input class="form-control" type="number" id="modal_noRooms"/>
+                    <input style="margin-top:25px" class="btn btn-searchHotelRooms form-control btn-primary" type="button" id="" value="SEARCH"/>
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="hotelRoomsModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Are these details correct?</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body" id="hotelRooms_modalBody"></div>
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="bookingHotelRoomModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body" id="bookingRoom_modalBody">
+                <div class="col">
+                    <div><input class="form-control" type="hidden" id="booking_hotelId"/></div>
+                    <div><input class="form-control" type="hidden" id="booking_hotelRoomId"/></div>
+                    <div>Hotel Name: <input readonly="true" class="form-control" type="text" id="booking_hotelName"/></div>
+                    <div>Customer Mobile: <input class="form-control" type="text" id="booking_customerMobile"/></div>
+                    <div id="noGuestsDiv">No. Guests: <input readonly="true" class="form-control" type="number" id="booking_noGuests"/></div>
+                    <div>No. Rooms: <input readonly="true" class="form-control" type="number" id="booking_noRooms"/></div>
+                    <div>Check-In Date: <input readonly="true" class="form-control" type="text" id="booking_checkInDate"/></div>
+                    <div>Check-Out Date: <input readonly="true" class="form-control" type="text" id="booking_checkOutDate"/></div>
+                    <div>Room Type: <input readonly="true" class="form-control" type="text" id="booking_roomType"/></div>
+                    <div>Discount: $<span id="booking_discount"></span></div>
+                    <div>Total Price: $<span id="booking_price"></span></div>
+                    <div style='margin-top:20px'>
+                        <button id="confirmBookingBtn" class="btn btn-confirm-booking btn btn-primary">Confirm Booking &amp; Pay</button>
+                        <button class="btn btn-primary">Edit</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var slider = document.getElementById("priceRange");
+    var output = document.getElementById("priceValue");
+    output.innerHTML = slider.value;
+    slider.oninput = function() {
+        output.innerHTML = this.value;
+    }
+</script>
+
+<!-- Main script -->
+<script>
+    $(document).ready(function(){
+        console.log("Page loaded, jQuery is ready.");
+
+        // Optional: Check if JWT token exists; if not, redirect to login page.
+        if (!localStorage.getItem("jwtToken")) {
+            window.location.href = "/login.html";
+        }
+
+        // Helper function to get JWT token from localStorage
+        function getJwtToken() {
+            return localStorage.getItem("jwtToken");
+        }
+
+        // Toggle navigation items based on token existence
+        if (getJwtToken()) {
+            // If token exists, hide Login link and show Logout link
+            $("#loginNavItem").addClass("d-none");
+            $("#logoutNavItem").removeClass("d-none");
+        } else {
+            // If no token, show Login link and hide Logout link
+            $("#loginNavItem").removeClass("d-none");
+            $("#logoutNavItem").addClass("d-none");
+        }
+
+        // Handle Logout button click
+        $("#logoutBtn").click(function(e){
+            e.preventDefault();
+            // Remove the token (and any other session data if needed)
+            localStorage.removeItem("jwtToken");
+            // Optionally clear other localStorage items, like cart data:
+            // localStorage.removeItem("cart");
+            // Redirect to the login page
+            window.location.href = "/login.html";
+        });
+
+        // Event listener for the Search/Filter button
+        $('#searchBtn, #filterBtn').click(function(){
+            console.log("Search/Filter button clicked.");
+            // Gather input values from the search/filter form
+            let searchLocation = $('#searchLocation').val();
+            let noRooms = $('#noRooms').val();
+            let noGuests = $('#noGuests').val();
+            let checkInDate = $('#checkInDate').val();
+            let checkOutDate = $('#checkOutDate').val();
+
+            // Gather star rating filters (as an array of numbers)
+            let starRatings = [];
+            $('.star_rating:checked').each(function(){
+                starRatings.push($(this).val());
+            });
+
+            // Price range filter value
+            let maxPrice = $('#priceRange').val();
+
+            // Gather amenity filters (as an array of strings)
+            let amenities = [];
+            $('.hotel_amenity:checked').each(function(){
+                amenities.push($(this).val());
+            });
+
+            console.log("Sending AJAX request with data:", {
+                searchLocation, noRooms, noGuests, checkInDate, checkOutDate, starRatings, maxPrice, amenities
+            });
+
+            // AJAX call to the search endpoint
+            $.ajax({
+                url: '/api/hotels/search',
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    "Authorization": "Bearer " + getJwtToken()
+                },
+                data: {
+                    searchLocation: searchLocation,
+                    noRooms: noRooms,
+                    noGuests: noGuests,
+                    checkInDate: checkInDate,
+                    checkOutDate: checkOutDate,
+                    starRatings: starRatings,
+                    maxPrice: maxPrice,
+                    amenities: amenities
+                },
+                success: function(hotels){
+                    console.log("AJAX success, hotels returned:", hotels);
+                    // Clear the container before displaying new results
+                    $('#listHotel').empty();
+                    if (hotels.length === 0) {
+                        $('#listHotel').html('<p>No hotels found.</p>');
+                    } else {
+                        // Loop through the returned hotel objects and build HTML for each hotel
+                        $.each(hotels, function(i, hotel){
+                            let amenitiesHtml = "";
+                            if (hotel.amenities && hotel.amenities.length > 0) {
+                                amenitiesHtml = `<p>Amenities: ${hotel.amenities.join(", ")}</p>`;
+                            }
+                            let hotelHtml = `
+                              <div class="hotel-card card m-2 p-2">
+                                  <h5>${hotel.name}</h5>
+                                  <p>${hotel.address}, ${hotel.city}, ${hotel.state}</p>
+                                  <p>Star Rating: ${hotel.starRating} | Price: $${hotel.price}</p>
+                                  ${amenitiesHtml}
+                                  <button class="btn btn-primary view-rooms" data-hotel-id="${hotel.id}">
+                                      View Rooms
+                                  </button>
+                              </div>
+                          `;
+                            $('#listHotel').append(hotelHtml);
+                        });
+                    }
+                },
+                error: function(error){
+                    console.error("Error fetching hotels:", error);
+                }
+            });
+        });
+
+        // Delegate event handling to dynamically added "View Rooms" buttons
+        $('#listHotel').on('click', '.view-rooms', function(){
+            let hotelId = $(this).data('hotel-id');
+            console.log("Fetching rooms for hotel id:", hotelId);
+
+            // AJAX call to retrieve rooms for the selected hotel
+            $.ajax({
+                url: '/api/hotels/' + hotelId + '/rooms',
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    "Authorization": "Bearer " + getJwtToken()
+                },
+                success: function(rooms){
+                    console.log("Rooms returned:", rooms);
+                    let roomHtml = '';
+                    if(rooms.length === 0){
+                        roomHtml = '<p>No rooms available for this hotel.</p>';
+                    } else {
+                        // For each room, build the room card with a "Select Room" button
+                        $.each(rooms, function(i, room){
+                            roomHtml += `
+      <div class="room-info card m-2 p-2">
+          <p>Room Type: ${room.roomType}</p>
+          <p>Available: ${room.availableRooms}</p>
+          <p>Price: $${room.roomPrice}</p>
+          <!-- Button to add room to cart -->
+          <button class="btn btn-success add-to-cart"
+                  data-room-id="${room.id}"
+                  data-room-type="${room.roomType}"
+                  data-room-price="${room.roomPrice}"
+                  data-hotel-id="${hotelId}">
+              Add to Cart
+          </button>
+      </div>
+  `;
+                        });
+                    }
+                    $('#roomsModalBody').html(roomHtml);
+                    $('#roomsModal').modal('show');
+                },
+                error: function(error){
+                    console.error("Error fetching rooms:", error);
+                }
+            });
+        });
+
+        // Helper: Retrieve the cart from localStorage or create a new one
+        function getCart() {
+            let cart = localStorage.getItem('cart');
+            return cart ? JSON.parse(cart) : [];
+        }
+
+        // Helper: Save the cart to localStorage
+        function saveCart(cart) {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        // Function to add a room to the cart
+        function addToCart(roomData) {
+            let cart = getCart();
+
+            cart.push(roomData);
+            saveCart(cart);
+            alert("Room added to cart!");
+        }
+
+        // Bind event for the "Add to Cart" button
+        $('#roomsModalBody').on('click', '.add-to-cart', function(){
+            let roomData = {
+                roomId: $(this).data('room-id'),
+                roomType: $(this).data('room-type'),
+                roomPrice: $(this).data('room-price'),
+                hotelId: $(this).data('hotel-id')
+                // You can add other details such as quantity, check-in date, etc.
+            };
+            console.log("Adding to cart:", roomData);
+            addToCart(roomData);
+        });
+
+    });
+</script>
+
+</body>
+</html>

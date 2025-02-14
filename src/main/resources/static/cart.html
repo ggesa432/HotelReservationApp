@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cart - Travel Gig</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <!-- Include Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Travel Gig</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <!-- Link to the home page (adjust href if your home page has a different name) -->
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html">Home</a>
+            </li>
+            <!-- Link to the cart page -->
+            <li class="nav-item active">
+                <a class="nav-link" href="/cart.html">Cart</a>
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link" href="/chat.html">Chat <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/login.html">Login</a>
+            </li>
+            <li class="nav-item d-none" id="logoutNavItem">
+                <a class="nav-link" href="#" id="logoutBtn">Logout</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h1>Your Cart</h1>
+    <div id="cartItems" class="my-4">
+        <!-- Cart items will be listed here -->
+    </div>
+    <div>
+        <h3>Total: $<span id="totalAmount">0.00</span></h3>
+    </div>
+    <button id="checkoutBtn" class="btn btn-primary">Checkout</button>
+</div>
+
+<script>
+    $(document).ready(function(){
+        // Check if JWT token exists; if not, redirect to login page.
+        if (!localStorage.getItem("jwtToken")) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        // Helper functions
+        function getCart() {
+            let cart = localStorage.getItem('cart');
+            return cart ? JSON.parse(cart) : [];
+        }
+
+        function getJwtToken() {
+            return localStorage.getItem("jwtToken");
+        }
+
+        // Toggle navigation items based on token existence
+        if (getJwtToken()) {
+            // If token exists, hide Login link and show Logout link
+            $("#loginNavItem").addClass("d-none");
+            $("#logoutNavItem").removeClass("d-none");
+        } else {
+            // If no token, show Login link and hide Logout link
+            $("#loginNavItem").removeClass("d-none");
+            $("#logoutNavItem").addClass("d-none");
+        }
+
+
+
+        function renderCart() {
+            let cart = getCart();
+            let $cartItems = $("#cartItems");
+            $cartItems.empty();
+            let total = 0;
+
+            if (cart.length === 0) {
+                $cartItems.html("<p>Your cart is empty.</p>");
+            } else {
+                cart.forEach(function(item, index) {
+                    // For demonstration, we assume quantity is 1 per room.
+                    let itemTotal = parseFloat(item.roomPrice);
+                    total += itemTotal;
+                    $cartItems.append(`
+                        <div class="card m-2 p-2">
+                            <p><strong>Room Type:</strong> ${item.roomType}</p>
+                            <p><strong>Price per Night:</strong> $${item.roomPrice}</p>
+                            <p><strong>Hotel ID:</strong> ${item.hotelId}</p>
+                            <button class="btn btn-danger btn-sm remove-item" data-index="${index}">Remove</button>
+                        </div>
+                    `);
+                });
+            }
+            $("#totalAmount").text(total.toFixed(2));
+        }
+
+        // Remove item from cart
+        $("#cartItems").on("click", ".remove-item", function(){
+            let index = $(this).data("index");
+            let cart = getCart();
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        });
+
+        renderCart();
+
+        // Bind click event for the Checkout button
+        $("#checkoutBtn").click(function(){
+            let cart = getCart();
+            if (cart.length === 0) {
+                alert("Your cart is empty!");
+                return;
+            }
+            // Calculate total amount (in cents)
+            let totalAmount = 0;
+            cart.forEach(function(item) {
+                totalAmount += parseFloat(item.roomPrice);
+            });
+            let amountInCents = Math.round(totalAmount * 100);
+
+            // Send the cart data and amount to the backend, including the JWT token
+            $.ajax({
+                url: '/api/payments/create-checkout-session',
+                type: 'POST',
+                data: { cart: JSON.stringify(cart), amount: amountInCents },
+                dataType: 'json',
+                headers: {
+                    "Authorization": "Bearer " + getJwtToken()
+                },
+                success: function(response){
+                    console.log("Checkout session created:", response);
+                    var stripe = Stripe("pk_test_51QrUjEQZavbYpKqRhJgvu9RGFfHki3wSLyQ6DchPhw6OYXqzuIiwxWGJxdRNutdsaOMUTbtAPhxHsmXBTwpcx6F100b1bue5cY");
+                    stripe.redirectToCheckout({ sessionId: response.sessionId })
+                        .then(function(result){
+                            console.error("Stripe redirect error:", result.error.message);
+                        });
+                },
+                error: function(error){
+                    console.error("Error creating checkout session:", error);
+                }
+            });
+        });
+
+        // Handle Logout button click
+        $("#logoutBtn").click(function(e){
+            e.preventDefault();
+            // Remove the token (and any other session data if needed)
+            localStorage.removeItem("jwtToken");
+            window.location.href = "/login.html";
+        });
+
+    });
+</script>
+
+</body>
+</html>

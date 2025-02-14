@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Travel Gig</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Travel Gig</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <!-- Link to the home page -->
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html">Home</a>
+            </li>
+            <!-- Link to the cart page -->
+            <li class="nav-item">
+                <a class="nav-link" href="/cart.html">Cart</a>
+            </li>
+            <!-- Link to the chatbot page -->
+            <li class="nav-item">
+                <a class="nav-link" href="/chat.html">Chatbot</a>
+            </li>
+            <!-- Current page: Login -->
+            <li class="nav-item active">
+                <a class="nav-link" href="/login.html">Login <span class="sr-only">(current)</span></a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" id="username" placeholder="Enter username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <div id="loginError" class="text-danger mt-2"></div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $("#loginForm").submit(function(e){
+            e.preventDefault(); // Prevent the default form submission
+
+            const username = $("#username").val().trim();
+            const password = $("#password").val().trim();
+
+            // Send the login request to your authentication endpoint
+            $.ajax({
+                url: '/api/auth/login',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username: username, password: password }),
+                success: function(response) {
+                    // Expected response: { "accessToken": "your_jwt_token", "tokenType": "Bearer" }
+                    const token = response.accessToken;
+                    // Store the JWT token in localStorage
+                    localStorage.setItem("jwtToken", token);
+                    // Optionally, redirect to the home page (or a protected page)
+                    window.location.href = "/index.html";
+                },
+                error: function(xhr, status, error) {
+                    $("#loginError").text("Login failed: " + xhr.responseText);
+                    console.error("Login error:", error);
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
